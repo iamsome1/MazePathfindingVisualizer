@@ -14,8 +14,6 @@ An interactive HTML5 application to visualize and compare 2D maze pathfinding al
 Open `index.html` in your browser. All logic is in `main.js`.
 
 ## License
-MIT
-
 MIT License
 
 Copyright (c) 2025 azmat
