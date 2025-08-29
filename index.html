@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze Pathfinding Visualization (A*)</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f7f9fa;
+        }
+        .main-layout {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: center;
+            min-height: 100vh;
+            width: 100vw;
+        }
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            align-items: flex-start;
+            justify-content: flex-start;
+            min-width: 260px;
+            max-width: 340px;
+            padding: 24px 12px 12px 32px;
+            background: #fff;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+            border-radius: 16px;
+            margin-right: 32px;
+            margin-top: 32px;
+            animation: fadeInLeft 0.7s;
+        }
+        @keyframes fadeInLeft {
+            from { opacity: 0; transform: translateX(-40px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .controls, .subcontrols {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            width: 100%;
+        }
+        .controls button, .subcontrols button {
+            background: linear-gradient(90deg, #007bff 0%, #00c6ff 100%);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+        }
+        .controls button:hover, .subcontrols button:hover {
+            background: linear-gradient(90deg, #0056b3 0%, #00aaff 100%);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+        .controls select {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+            background: #f7f9fa;
+        }
+        .subcontrols label {
+            font-weight: 500;
+            color: #007bff;
+        }
+        #speedValue {
+            font-weight: bold;
+            color: #007bff;
+        }
+        #mazeCanvas {
+            margin: 0 auto;
+            display: block;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+            border-radius: 16px;
+            background: #fff;
+            transition: box-shadow 0.2s;
+        }
+        #mazeCanvas:hover {
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+        }
+        #statisticsPanel, #resultInfo {
+            max-width: 600px;
+            margin: 0 auto 8px auto;
+            border-radius: 8px;
+        }
+        #statisticsPanel {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            color: #1565c0;
+        }
+        #resultInfo {
+            background: #fff3e0;
+            border: 1px solid #ffb74d;
+            color: #e65100;
+        }
+        .active-btn {
+            box-shadow: 0 0 0 3px #90caf9;
+            background: linear-gradient(90deg, #00c6ff 0%, #007bff 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-layout">
+        <div class="left-panel">
+            <div class="controls">
+                <div style="margin-bottom:12px;">
+                    <label for="algoSelect">Algorithm:</label>
+                    <select id="algoSelect">
+                        <option value="astar">A*</option>
+                        <option value="dijkstra">Dijkstra</option>
+                        <option value="bfs">Breadth-First Search</option>
+                        <option value="dfs">Depth-First Search</option>
+                    </select>
+                    <button onclick="findPath()">Find Path</button>
+                </div>
+                <fieldset style="margin-bottom:12px; border-radius:8px; border:1px solid #90caf9; padding:10px;">
+                    <legend style="color:#1565c0; font-weight:bold;">Maze Editing</legend>
+                    <button onclick="addRandomWalls()">Add Random Walls</button>
+                    <button onclick="resetMaze()">Reset Maze</button>
+                    <button onclick="enableWallDrawing();setActive(this)">Draw Walls Manually</button>
+                    <button onclick="enableWallRemoving();setActive(this)">Remove Walls Manually</button>
+                    <button onclick="enableWeightMode();setActive(this)">Set Weights</button>
+                    <button onclick="enableStartPlacement();setActive(this)">Set Start</button>
+                    <button onclick="enableEndPlacement();setActive(this)">Set Destination</button>
+                </fieldset>
+                <fieldset style="margin-bottom:12px; border-radius:8px; border:1px solid #00c6ff; padding:10px;">
+                    <legend style="color:#007bff; font-weight:bold;">Pathfinding Options</legend>
+                    <button onclick="toggleDiagonal();setActive(this)" id="diagonalBtn">Diagonal: Off</button>
+                </fieldset>
+                <fieldset style="margin-bottom:12px; border-radius:8px; border:1px solid #007bff; padding:10px;">
+                    <legend style="color:#007bff; font-weight:bold;">Animation & Replay</legend>
+                    <label for="speedRange" style="margin-right:8px;">Speed:</label>
+                    <input type="range" id="speedRange" min="1" max="100" value="10" style="width:120px; vertical-align:middle;">
+                    <span id="speedValue">10</span> ms/step
+                    <div id="stepControls" style="margin-top:8px;">
+                        <button onclick="stepBackward()">Step Backward</button>
+                        <button onclick="playAnimation()">Play</button>
+                        <button onclick="pauseAnimation()">Pause</button>
+                        <button onclick="stepForward()">Step Forward</button>
+                    </div>
+                    <button onclick="replayPath()" style="margin-top:8px;">Replay Path</button>
+                </fieldset>
+                <fieldset style="margin-bottom:12px; border-radius:8px; border:1px solid #1565c0; padding:10px;">
+                    <legend style="color:#1565c0; font-weight:bold;">Comparison & Statistics</legend>
+                    <button onclick="compareAlgorithms()">Compare Algorithms</button>
+                    <div id="statisticsPanel" style="margin-bottom: 8px; font-size: 16px;">
+                        <strong>Statistics:</strong>
+                        <div id="statsContent"></div>
+                    </div>
+                </fieldset>
+            </div>
+            <div id="resultInfo" style="margin-bottom: 8px; font-size: 16px;"></div>
+        </div>
+        <div style="flex: 1; display: flex; justify-content: center; align-items: center; min-height: 650px;">
+            <canvas id="mazeCanvas" width="600" height="600"></canvas>
+        </div>
+    </div>
+    <div id="comparisonPanel" style="display:none; margin-top:32px; width:100%;">
+        <h2 style="text-align:center; color:#007bff; margin-bottom:18px;">Algorithm Comparison</h2>
+        <div style="display:flex; flex-direction:row; justify-content:center; align-items:flex-start; gap:32px;">
+            <div style="display:flex; flex-direction:column; align-items:center;">
+                <canvas id="compareCanvasLeft" width="300" height="300" style="border:1px solid #333; border-radius:12px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.08);"></canvas>
+                <div id="compareLabelLeft" style="margin-top:8px; font-weight:bold; color:#1565c0;"></div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center;">
+                <canvas id="compareCanvasRight" width="300" height="300" style="border:1px solid #333; border-radius:12px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.08);"></canvas>
+                <div id="compareLabelRight" style="margin-top:8px; font-weight:bold; color:#1565c0;"></div>
+            </div>
+        </div>
+        <div style="width:100%; display:flex; justify-content:center; margin-top:24px;">
+            <div style="min-width:500px;">
+                <!-- Stats table will be injected here -->
+            </div>
+        </div>
+    </div>
+    <script>
+function setActive(btn) {
+    document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active-btn'));
+    btn.classList.add('active-btn');
+}
+</script>
+    <script src="main.js"></script>
+</body>
+</html>
