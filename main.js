@@ -50,6 +50,18 @@ function hasLineOfSight(a, b) {
 }
 
 function smoothPath(path) {
+    if (path.length < 3) return path;
+    let newPath = [path[0]];
+    let i = 0;
+    for (let j = 2; j < path.length; j++) {
+        if (!hasLineOfSight(path[i], path[j])) {
+            newPath.push(path[j - 1]);
+            i = j - 1;
+        }
+    }
+    newPath.push(path[path.length - 1]);
+    return newPath;
+}
 
 // Expand a polyline path into contiguous grid cells using Bresenham between waypoints
 function rasterizeSegment(a, b) {
@@ -90,23 +102,11 @@ function expandPath(path) {
     if (!path || path.length === 0) return path;
     let expanded = [];
     for (let i = 0; i < path.length - 1; i++) {
-        const seg = rasterizeSegment(path[i], path[i+1]);
+        const seg = rasterizeSegment(path[i], path[i + 1]);
         if (i > 0) seg.shift(); // avoid duplicating the joint
         expanded.push(...seg);
     }
     return expanded.length ? expanded : path;
-}
-    if (path.length < 3) return path;
-    let newPath = [path[0]];
-    let i = 0;
-    for (let j = 2; j < path.length; j++) {
-        if (!hasLineOfSight(path[i], path[j])) {
-            newPath.push(path[j-1]);
-            i = j-1;
-        }
-    }
-    newPath.push(path[path.length-1]);
-    return newPath;
 }
 
 // Toggle for smoothing (Theta*-like)
