@@ -51,6 +51,15 @@ function smoothPath(path) {
     return newPath;
 }
 
+// Toggle for smoothing (Theta*-like)
+let smoothingEnabled = true;
+function toggleSmoothing() {
+    smoothingEnabled = !smoothingEnabled;
+    const btn = document.getElementById('smoothingBtn');
+    if (btn) btn.textContent = `Smoothing (Theta*): ${smoothingEnabled ? 'On' : 'Off'}`;
+}
+window.toggleSmoothing = toggleSmoothing;
+
 // Add some walls for demo
 for (let i = 5; i < 15; i++) {
     maze[i][10] = 1;
@@ -231,18 +240,20 @@ function aStar() {
             }
         }
     }
-    animatePath(explored, smoothPath(path));
+    const displayedPathA = smoothingEnabled ? smoothPath(path) : path;
+    animatePath(explored, displayedPathA);
     const t1 = performance.now();
     const infoDiv = document.getElementById('resultInfo');
     if (found) {
-        infoDiv.textContent = `Cost: ${cost}, Time: ${(t1-t0).toFixed(2)} ms`;
+        const displayedCostA = displayedPathA.reduce((acc, n, i) => i === 0 ? acc : acc + cellWeights[n.row][n.col], 0);
+        infoDiv.textContent = `Cost: ${displayedCostA}, Time: ${(t1-t0).toFixed(2)} ms`;
     } else {
         infoDiv.textContent = 'No path found!';
     }
     updateStatisticsPanel({
         nodesExplored: explored.length,
-        pathLength: path.length,
-        pathCost: cost,
+        pathLength: displayedPathA.length,
+        pathCost: displayedPathA.reduce((acc, n, i) => i === 0 ? acc : acc + cellWeights[n.row][n.col], 0),
         timeTaken: (t1-t0).toFixed(2)
     });
 }
@@ -283,18 +294,20 @@ function dijkstra() {
             }
         }
     }
-    animatePath(explored, smoothPath(path));
+    const displayedPathD = smoothingEnabled ? smoothPath(path) : path;
+    animatePath(explored, displayedPathD);
     const t1 = performance.now();
     const infoDiv = document.getElementById('resultInfo');
     if (found) {
-        infoDiv.textContent = `Cost: ${cost}, Time: ${(t1-t0).toFixed(2)} ms`;
+        const displayedCostD = displayedPathD.reduce((acc, n, i) => i === 0 ? acc : acc + cellWeights[n.row][n.col], 0);
+        infoDiv.textContent = `Cost: ${displayedCostD}, Time: ${(t1-t0).toFixed(2)} ms`;
     } else {
         infoDiv.textContent = 'No path found!';
     }
     updateStatisticsPanel({
         nodesExplored: explored.length,
-        pathLength: path.length,
-        pathCost: cost,
+        pathLength: displayedPathD.length,
+        pathCost: displayedPathD.reduce((acc, n, i) => i === 0 ? acc : acc + cellWeights[n.row][n.col], 0),
         timeTaken: (t1-t0).toFixed(2)
     });
 }
@@ -333,18 +346,20 @@ function bfs() {
             }
         }
     }
-    animatePath(explored, smoothPath(path));
+    const displayedPathB = smoothingEnabled ? smoothPath(path) : path;
+    animatePath(explored, displayedPathB);
     const t1 = performance.now();
     const infoDiv = document.getElementById('resultInfo');
     if (found) {
-        infoDiv.textContent = `Cost: ${cost}, Time: ${(t1-t0).toFixed(2)} ms`;
+        const displayedCostB = displayedPathB.reduce((acc, n, i) => i === 0 ? acc : acc + cellWeights[n.row][n.col], 0);
+        infoDiv.textContent = `Cost: ${displayedCostB}, Time: ${(t1-t0).toFixed(2)} ms`;
     } else {
         infoDiv.textContent = 'No path found!';
     }
     updateStatisticsPanel({
         nodesExplored: explored.length,
-        pathLength: path.length,
-        pathCost: cost,
+        pathLength: displayedPathB.length,
+        pathCost: displayedPathB.reduce((acc, n, i) => i === 0 ? acc : acc + cellWeights[n.row][n.col], 0),
         timeTaken: (t1-t0).toFixed(2)
     });
 }
@@ -383,18 +398,20 @@ function dfs() {
             }
         }
     }
-    animatePath(explored, smoothPath(path));
+    const displayedPathF = smoothingEnabled ? smoothPath(path) : path;
+    animatePath(explored, displayedPathF);
     const t1 = performance.now();
     const infoDiv = document.getElementById('resultInfo');
     if (found) {
-        infoDiv.textContent = `Cost: ${cost}, Time: ${(t1-t0).toFixed(2)} ms`;
+        const displayedCostF = displayedPathF.reduce((acc, n, i) => i === 0 ? acc : acc + cellWeights[n.row][n.col], 0);
+        infoDiv.textContent = `Cost: ${displayedCostF}, Time: ${(t1-t0).toFixed(2)} ms`;
     } else {
         infoDiv.textContent = 'No path found!';
     }
     updateStatisticsPanel({
         nodesExplored: explored.length,
-        pathLength: path.length,
-        pathCost: cost,
+        pathLength: displayedPathF.length,
+        pathCost: displayedPathF.reduce((acc, n, i) => i === 0 ? acc : acc + cellWeights[n.row][n.col], 0),
         timeTaken: (t1-t0).toFixed(2)
     });
 }
