@@ -62,6 +62,8 @@ function smoothPath(path) {
     newPath.push(path[path.length - 1]);
     return newPath;
 }
+// Expose for safety if scope isolation occurs
+window.smoothPath = smoothPath;
 
 // Expand a polyline path into contiguous grid cells using Bresenham between waypoints
 function rasterizeSegment(a, b) {
@@ -108,6 +110,8 @@ function expandPath(path) {
     }
     return expanded.length ? expanded : path;
 }
+// Expose for safety if scope isolation occurs
+window.expandPath = expandPath;
 
 // Toggle for smoothing (Theta*-like)
 let smoothingEnabled = true;
