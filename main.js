@@ -28,16 +28,57 @@ function hasLineOfSight(a, b) {
     let dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
     let sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
     let err = dx - dy;
+    // If diagonal moves are disabled, only allow straight-line smoothing
+    if (!diagonalEnabled && dx !== 0 && dy !== 0) return false;
     while (x0 !== x1 || y0 !== y1) {
         if (maze[y0][x0] === 1) return false;
         let e2 = 2 * err;
-        if (e2 > -dy) { err -= dy; x0 += sx; }
-        if (e2 < dx) { err += dx; y0 += sy; }
+        let nx = x0;
+        let ny = y0;
+        let movedX = false;
+        let movedY = false;
+        if (e2 > -dy) { err -= dy; nx += sx; movedX = true; }
+        if (e2 < dx) { err += dx; ny += sy; movedY = true; }
+        // Prevent corner cutting on diagonal steps
+        if (movedX && movedY) {
+            if (maze[y0][nx] === 1 || maze[ny][x0] === 1) return false;
+        }
+        x0 = nx; y0 = ny;
+        if (maze[y0][x0] === 1) return false;
     }
     return maze[y1][x1] !== 1;
 }
 
 function smoothPath(path) {
+
+// Expand a polyline path into contiguous grid cells using Bresenham between waypoints
+function rasterizeSegment(a, b) {
+    let x0 = a.col, y0 = a.row, x1 = b.col, y1 = b.row;
+    const points = [];
+    let dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+    let sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+    let err = dx - dy;
+    // include start
+    points.push({ row: y0, col: x0 });
+    while (x0 !== x1 || y0 !== y1) {
+        let e2 = 2 * err;
+        if (e2 > -dy) { err -= dy; x0 += sx; }
+        if (e2 < dx) { err += dx; y0 += sy; }
+        points.push({ row: y0, col: x0 });
+    }
+    return points;
+}
+
+function expandPath(path) {
+    if (!path || path.length === 0) return path;
+    let expanded = [];
+    for (let i = 0; i < path.length - 1; i++) {
+        const seg = rasterizeSegment(path[i], path[i+1]);
+        if (i > 0) seg.shift(); // avoid duplicating the joint
+        expanded.push(...seg);
+    }
+    return expanded.length ? expanded : path;
+}
     if (path.length < 3) return path;
     let newPath = [path[0]];
     let i = 0;
@@ -57,6 +98,10 @@ function toggleSmoothing() {
     smoothingEnabled = !smoothingEnabled;
     const btn = document.getElementById('smoothingBtn');
     if (btn) btn.textContent = `Smoothing (Theta*): ${smoothingEnabled ? 'On' : 'Off'}`;
+    // If a result is present, recompute to reflect the new setting
+    if ((typeof lastBestPath !== 'undefined' && lastBestPath.length > 0) || (typeof lastExplored !== 'undefined' && lastExplored.length > 0)) {
+        findPath();
+    }
 }
 window.toggleSmoothing = toggleSmoothing;
 
@@ -240,7 +285,7 @@ function aStar() {
             }
         }
     }
-    const displayedPathA = smoothingEnabled ? smoothPath(path) : path;
+    const displayedPathA = smoothingEnabled ? expandPath(smoothPath(path)) : path;
     animatePath(explored, displayedPathA);
     const t1 = performance.now();
     const infoDiv = document.getElementById('resultInfo');
@@ -294,7 +339,7 @@ function dijkstra() {
             }
         }
     }
-    const displayedPathD = smoothingEnabled ? smoothPath(path) : path;
+    const displayedPathD = smoothingEnabled ? expandPath(smoothPath(path)) : path;
     animatePath(explored, displayedPathD);
     const t1 = performance.now();
     const infoDiv = document.getElementById('resultInfo');
@@ -346,7 +391,7 @@ function bfs() {
             }
         }
     }
-    const displayedPathB = smoothingEnabled ? smoothPath(path) : path;
+    const displayedPathB = smoothingEnabled ? expandPath(smoothPath(path)) : path;
     animatePath(explored, displayedPathB);
     const t1 = performance.now();
     const infoDiv = document.getElementById('resultInfo');
@@ -398,7 +443,7 @@ function dfs() {
             }
         }
     }
-    const displayedPathF = smoothingEnabled ? smoothPath(path) : path;
+    const displayedPathF = smoothingEnabled ? expandPath(smoothPath(path)) : path;
     animatePath(explored, displayedPathF);
     const t1 = performance.now();
     const infoDiv = document.getElementById('resultInfo');
