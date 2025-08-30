@@ -21,6 +21,36 @@ const CELL_SIZE = canvas.width / COLS;
 // 0: empty, 1: wall
 let maze = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
 
+// Path smoothing using line-of-sight (Theta*-like)
+function hasLineOfSight(a, b) {
+    // Bresenham's line algorithm for grid line-of-sight
+    let x0 = a.col, y0 = a.row, x1 = b.col, y1 = b.row;
+    let dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+    let sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+    let err = dx - dy;
+    while (x0 !== x1 || y0 !== y1) {
+        if (maze[y0][x0] === 1) return false;
+        let e2 = 2 * err;
+        if (e2 > -dy) { err -= dy; x0 += sx; }
+        if (e2 < dx) { err += dx; y0 += sy; }
+    }
+    return maze[y1][x1] !== 1;
+}
+
+function smoothPath(path) {
+    if (path.length < 3) return path;
+    let newPath = [path[0]];
+    let i = 0;
+    for (let j = 2; j < path.length; j++) {
+        if (!hasLineOfSight(path[i], path[j])) {
+            newPath.push(path[j-1]);
+            i = j-1;
+        }
+    }
+    newPath.push(path[path.length-1]);
+    return newPath;
+}
+
 // Add some walls for demo
 for (let i = 5; i < 15; i++) {
     maze[i][10] = 1;
@@ -201,7 +231,7 @@ function aStar() {
             }
         }
     }
-    animatePath(explored, path);
+    animatePath(explored, smoothPath(path));
     const t1 = performance.now();
     const infoDiv = document.getElementById('resultInfo');
     if (found) {
@@ -253,7 +283,7 @@ function dijkstra() {
             }
         }
     }
-    animatePath(explored, path);
+    animatePath(explored, smoothPath(path));
     const t1 = performance.now();
     const infoDiv = document.getElementById('resultInfo');
     if (found) {
@@ -303,7 +333,7 @@ function bfs() {
             }
         }
     }
-    animatePath(explored, path);
+    animatePath(explored, smoothPath(path));
     const t1 = performance.now();
     const infoDiv = document.getElementById('resultInfo');
     if (found) {
@@ -353,7 +383,7 @@ function dfs() {
             }
         }
     }
-    animatePath(explored, path);
+    animatePath(explored, smoothPath(path));
     const t1 = performance.now();
     const infoDiv = document.getElementById('resultInfo');
     if (found) {
