@@ -62,9 +62,26 @@ function rasterizeSegment(a, b) {
     points.push({ row: y0, col: x0 });
     while (x0 !== x1 || y0 !== y1) {
         let e2 = 2 * err;
-        if (e2 > -dy) { err -= dy; x0 += sx; }
-        if (e2 < dx) { err += dx; y0 += sy; }
-        points.push({ row: y0, col: x0 });
+        let nx = x0;
+        let ny = y0;
+        let movedX = false;
+        let movedY = false;
+        if (e2 > -dy) { err -= dy; nx += sx; movedX = true; }
+        if (e2 < dx) { err += dx; ny += sy; movedY = true; }
+        // Bridge diagonal corner to ensure 4-connected path
+        if (movedX && movedY) {
+            const bridge1 = { row: y0, col: nx };
+            const bridge2 = { row: ny, col: x0 };
+            const last = points[points.length - 1];
+            if (!last || last.row !== bridge1.row || last.col !== bridge1.col) {
+                if (maze[bridge1.row] && maze[bridge1.row][bridge1.col] === 0) points.push(bridge1);
+            }
+            if (maze[bridge2.row] && maze[bridge2.row][bridge2.col] === 0) points.push(bridge2);
+        }
+        x0 = nx; y0 = ny;
+        const p = { row: y0, col: x0 };
+        const last2 = points[points.length - 1];
+        if (!last2 || last2.row !== p.row || last2.col !== p.col) points.push(p);
     }
     return points;
 }
